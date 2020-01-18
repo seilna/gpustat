@@ -164,8 +164,11 @@ class GPUStat(object):
                  show_power=None,
                  show_fan_speed=None,
                  gpuname_width=16,
-                 term=Terminal(),
+                 term=None,
                  ):
+        if term is None:
+            term = Terminal(stream=sys.stdout)
+
         # color settings
         colors = {}
 
@@ -345,7 +348,7 @@ class GPUStatCollection(object):
                     process['command'] = os.path.basename(_cmdline[0])
                     process['full_command'] = _cmdline
                 # Bytes to MBytes
-                # if drivers are not TTC this will be None. 
+                # if drivers are not TTC this will be None.
                 usedmem = nv_process.usedGpuMemory // MB if \
                           nv_process.usedGpuMemory else None
                 process['gpu_memory_usage'] = usedmem
@@ -476,7 +479,7 @@ class GPUStatCollection(object):
         s += '\n'.join('  ' + str(g) for g in self.gpus)
         s += '\n])'
         return s
-    
+
     def is_windows(self):
         return 'windows' in platform.platform().lower()
 
@@ -502,7 +505,7 @@ class GPUStatCollection(object):
         elif no_color:
             t_color = Terminal(force_styling=None)
         else:
-            t_color = Terminal()   # auto, depending on isatty
+            t_color = Terminal(stream=fp)   # auto, depending on isatty
 
         # appearance settings
         entry_name_width = [len(g.entry['name']) for g in self]
