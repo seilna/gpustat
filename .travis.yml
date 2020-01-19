@@ -20,7 +20,7 @@ matrix:
         - python -m pip install --upgrade pip
         - pip3 install --upgrade pytest
         - pip3 install codecov
-      env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
+      env: PATH="/c/Python37:/c/Python37/Scripts:$PATH" PYTHONIOENCODING="UTF-8"
 
 script:
   - pip install -r requirements.txt
