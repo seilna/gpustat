@@ -500,7 +500,7 @@ class GPUStatCollection(object):
             t_color = Terminal(kind='linux', force_styling=True)
 
             # workaround of issue #32 (watch doesn't recognize sgr0 characters)
-            t_color.normal = u'\x1b[0;10m'
+            t_color._normal = u'\x1b[0;10m'
         elif no_color:
             t_color = Terminal(force_styling=None)
         else:
