@@ -4,12 +4,49 @@ from __future__ import print_function
 
 import sys
 import time
-
+import pickle
+import os
+import datetime
 from blessings import Terminal
 
 from gpustat import __version__
 from .core import GPUStatCollection
 
+def update_history(gpu_stats):
+    hostname = gpu_stats.hostname
+
+    if not os.path.exists('gpu_history.pkl'):
+        pickle.dump({}, open('gpu_history.pkl', 'wb'))
+
+    with open('gpu_history.pkl', 'rb') as f:
+        history = pickle.load(f)
+
+        # hostname 추가
+        hostname = gpu_stats.hostname
+        if hostname not in history:
+            history[hostname] = {}
+
+        # 프로세스 정보를 받아와서 유저가 마지막으로 사용한 시각 기록
+        for gpu_id, gpu_stat in enumerate(gpu_stats):
+            if gpu_id not in history[hostname]:
+                history[hostname][gpu_id] = {}
+            for p in gpu_stat.processes:
+                username = p['username']
+                history[hostname][gpu_id][username] = \
+                    {'last_used': datetime.datetime.now()}
+
+        # 사용기록이 오래된 유저의 기록 삭제
+        for gpu_id in history[hostname].keys():
+            cleaned_users = []
+            for username, last_used in history[hostname][gpu_id].items():
+                used_before = (datetime.datetime.now() - last_used['last_used']).seconds / 3600
+                if used_before > 7:
+                    cleaned_users.append(username)
+            for username in cleaned_users:
+                history[hostname][gpu_id].pop(username)
+
+    with open('gpu_history.pkl', 'wb') as f:
+        pickle.dump(history, f)
 
 def print_gpustat(json=False, debug=False, **kwargs):
     '''
@@ -35,6 +72,8 @@ def print_gpustat(json=False, debug=False, **kwargs):
         gpu_stats.print_json(sys.stdout)
     else:
         gpu_stats.print_formatted(sys.stdout, **kwargs)
+
+    update_history(gpu_stats)
 
 
 def loop_gpustat(interval=1.0, **kwargs):

@@ -19,6 +19,7 @@ import os.path
 import platform
 import sys
 import time
+import pickle
 from datetime import datetime
 
 from six.moves import cStringIO as StringIO
@@ -155,6 +156,10 @@ class GPUStat(object):
         """
         return self.entry['processes']
 
+    @property
+    def last_used(self):
+        return self.entry['last_used']
+
     def print_to(self, fp,
                  with_colors=True,    # deprecated arg
                  show_cmd=False,
@@ -187,7 +192,8 @@ class GPUStat(object):
         colors['CMemT'] = term.yellow
         colors['CMemP'] = term.yellow
         colors['CCPUMemU'] = term.yellow
-        colors['CUser'] = term.bold_black   # gray
+        # colors['CUser'] = term.bold_black   # gray
+        colors['CUser'] = term.bold_white
         colors['CUtil'] = _conditional(lambda: self.utilization < 30,
                                        term.green, term.bold_green)
         colors['CCPUUtil'] = term.green
@@ -281,6 +287,14 @@ class GPUStat(object):
         if show_full_cmd and full_processes:
             full_processes[-1] = full_processes[-1].replace('├', '└', 1)
             reps += ''.join(full_processes)
+
+        # write last used info
+        using_usernames = [p['username'] for p in processes]
+        for username, used_before in self.last_used:
+            if username in using_usernames:
+                continue
+            reps += term.bold_black(' {}'.format(username))
+            reps += colors['C1'](' ({:.1f}h ago)'.format(used_before))
         fp.write(reps)
         return fp
 
@@ -325,6 +339,17 @@ class GPUStatCollection(object):
 
         def get_gpu_info(handle):
             """Get one GPU information specified by nvml handle"""
+            def get_last_used(index):
+                last_useds = []
+                with open('gpu_history.pkl', 'rb') as f:
+                    history = pickle.load(f)
+                    if platform.node() in history:
+                        for user, last_used in history[platform.node()][index].items():
+                            used_before = (datetime.now() - last_used['last_used']).seconds / 3600
+                            last_useds.append((user, used_before))
+                        return last_useds
+                    else:
+                        return []
 
             def get_process_info(nv_process):
                 """Get the process information of specific pid"""
@@ -422,6 +447,7 @@ class GPUStatCollection(object):
                     process['cpu_percent'] = cache_process.cpu_percent()
 
             index = N.nvmlDeviceGetIndex(handle)
+            last_used = get_last_used(index)
             gpu_info = {
                 'index': index,
                 'uuid': uuid,
@@ -436,6 +462,7 @@ class GPUStatCollection(object):
                 'memory.used': memory.used // MB if memory else None,
                 'memory.total': memory.total // MB if memory else None,
                 'processes': processes,
+                'last_used': last_used,
             }
             GPUStatCollection.clean_processes()
             return gpu_info
