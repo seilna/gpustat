@@ -341,6 +341,8 @@ class GPUStatCollection(object):
             """Get one GPU information specified by nvml handle"""
             def get_last_used(index):
                 last_useds = []
+                if not os.path.exists('gpu_history.pkl'):
+                    pickle.dump({}, open('gpu_history.pkl', 'wb'))
                 with open('gpu_history.pkl', 'rb') as f:
                     history = pickle.load(f)
                     if platform.node() in history:
