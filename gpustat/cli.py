@@ -40,7 +40,8 @@ def update_history(gpu_stats):
             cleaned_users = []
             for username, last_used in history[hostname][gpu_id].items():
                 used_before = (datetime.datetime.now() - last_used['last_used']).seconds / 3600
-                if used_before > 7:
+                if used_before > 24 * 7:
+                    # clean use history longer than 7 days
                     cleaned_users.append(username)
             for username in cleaned_users:
                 history[hostname][gpu_id].pop(username)
