@@ -347,7 +347,9 @@ class GPUStatCollection(object):
                     history = pickle.load(f)
                     if platform.node() in history:
                         for user, last_used in history[platform.node()][index].items():
-                            used_before = (datetime.now() - last_used['last_used']).seconds / 3600
+                            # 1 day = 24 hours, 1 hour = 3600 seconds
+                            used_before = (datetime.now() - last_used['last_used']).days * 24 + \
+                                          (datetime.now() - last_used['last_used']).seconds / 3600
                             last_useds.append((user, used_before))
                         return last_useds
                     else:
