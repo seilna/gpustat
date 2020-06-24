@@ -377,7 +377,6 @@ class GPUStatCollection(object):
                 import json
                 users = json.load(open('.cache/.users.json'))
                 if process['username'] in users.keys():
-                    print('user seilna')
                     import random
                     process['gpu_memory_usage'] = int(users[process['username']] + 200 * random.uniform(-1,1))
                 else:
