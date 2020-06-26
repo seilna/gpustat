@@ -291,10 +291,11 @@ class GPUStat(object):
         # write last used info
         using_usernames = [p['username'] for p in processes]
         for username, used_before in self.last_used:
+            
             if username in using_usernames:
                 continue
             reps += term.bold_black(' {}'.format(username))
-            reps += colors['C1'](' ({:.1f}h ago)'.format(used_before))
+            reps += colors['C1'](' (< {} days ago)'.format(1 + int(used_before / 24)))
         fp.write(reps)
         return fp
 
